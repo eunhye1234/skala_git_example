@@ -1,0 +1,132 @@
+name: Slack LMS Alarm
+
+on:
+  schedule:
+    # 월~금 오전 8:45 (KST)
+    # GitHub Actions는 UTC 기준이므로 전날 22:50 UTC
+    - cron: '45 23 * * 0-4'
+
+    # 월~금 오후 5:50 (KST)
+    - cron: '50 8 * * 1-5'
+
+  workflow_dispatch:
+    inputs:
+      test:
+        description: "테스트할 알림 선택"
+        required: true
+        default: morning
+        type: choice
+        options:
+          - morning
+          - evening
+
+jobs:
+  slack-alarm:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      ####################################################
+      # 아침 알림
+      ####################################################
+      - name: Send Morning Alarm
+        if: github.event.schedule == '45 23 * * 0-4' || github.event.inputs.test == 'morning'
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
+          -H 'Content-type: application/json' \
+          --data '{
+            "blocks":[
+              {
+                "type":"header",
+                "text":{
+                  "type":"plain_text",
+                  "text":"🌞 좋은 아침입니다!"
+                }
+              },
+              {
+                "type":"section",
+                "text":{
+                  "type":"mrkdwn",
+                  "text":"LMS로 *입실 체크*를 해주세요."
+                }
+              },
+              {
+                "type":"actions",
+                "elements":[
+                  {
+                    "type":"button",
+                    "text":{
+                      "type":"plain_text",
+                      "text":"📚 LMS 바로가기"
+                    },
+                    "url":"https://student.skala-ai.com/login",
+                    "style":"primary"
+                  }
+                ]
+              },
+              {
+                "type":"divider"
+              },
+              {
+                "type":"context",
+                "elements":[
+                  {
+                    "type":"mrkdwn",
+                    "text":"✅ 오늘도 좋은 하루 보내세요!"
+                  }
+                ]
+              }
+            ]
+          }'
+
+      ####################################################
+      # 퇴근 알림
+      ####################################################
+      - name: Send Evening Alarm
+        if: github.event.schedule == '45 8 * * 1-5' || github.event.inputs.test == 'evening'
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
+          -H 'Content-type: application/json' \
+          --data '{
+            "blocks":[
+              {
+                "type":"header",
+                "text":{
+                  "type":"plain_text",
+                  "text":"🌙 오늘 하루 잘 보내셨나요?"
+                }
+              },
+              {
+                "type":"section",
+                "text":{
+                  "type":"mrkdwn",
+                  "text":"LMS로 *퇴실 체크*를 해주세요."
+                }
+              },
+              {
+                "type":"actions",
+                "elements":[
+                  {
+                    "type":"button",
+                    "text":{
+                      "type":"plain_text",
+                      "text":"📚 LMS 바로가기"
+                    },
+                    "url":"https://student.skala-ai.com/login"
+                  }
+                ]
+              },
+              {
+                "type":"divider"
+              },
+              {
+                "type":"context",
+                "elements":[
+                  {
+                    "type":"mrkdwn",
+                    "text":"🙌 오늘도 수고 많으셨습니다!"
+                  }
+                ]
+              }
+            ]
+          }'
